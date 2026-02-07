@@ -1,8 +1,13 @@
 import { Shield, Activity, Brain, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import StatusCard from "@/components/StatusCard";
-
+import TrafficFeed from "@/components/TrafficFeed";
+import { useTrafficFeed } from "@/hooks/useTrafficFeed";
 const Index = () => {
+  const { entries, latest } = useTrafficFeed(3000, 30);
+
+  const networkStatus = latest?.prediction === "DDoS" ? "danger" : "normal";
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -37,32 +42,33 @@ const Index = () => {
           </p>
         </section>
 
-        {/* Status Cards */}
+        {/* Status Cards - driven by latest feed entry */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatusCard
             title="Network Status"
-            value="Normal"
-            subtitle="No threats detected"
+            value={latest?.prediction ?? "Normal"}
+            subtitle={latest?.prediction === "DDoS" ? "Threat detected!" : "No threats detected"}
             icon={Wifi}
-            status="normal"
+            status={networkStatus}
           />
           <StatusCard
             title="Traffic Rate"
-            value="1,284"
+            value={latest?.volume.toLocaleString() ?? "—"}
             subtitle="requests / sec"
             icon={Activity}
-            status="normal"
+            status={latest && latest.volume > 3000 ? "warning" : "normal"}
           />
           <StatusCard
             title="Model Confidence"
-            value="97.3%"
+            value={`${latest?.confidence ?? 0}%`}
             subtitle="CNN inference score"
             icon={Brain}
             status="normal"
           />
         </section>
 
-        {/* Footer */}
+        {/* Live Traffic Feed */}
+        <TrafficFeed />
         <footer className="text-center py-8 border-t border-border/30">
           <p className="text-xs text-muted-foreground font-mono">
             CNN Model v1.0 &bull; TensorFlow Backend &bull; Real-Time Inference
