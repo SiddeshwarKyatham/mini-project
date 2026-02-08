@@ -5,6 +5,7 @@ import StatusCard from "@/components/StatusCard";
 import TrafficFeed from "@/components/TrafficFeed";
 import TrafficCharts from "@/components/TrafficCharts";
 import AttackBanner from "@/components/AttackBanner";
+import MitigationPanel from "@/components/MitigationPanel";
 import { useTrafficFeed } from "@/hooks/useTrafficFeed";
 import { useToast } from "@/hooks/use-toast";
 
@@ -91,8 +92,11 @@ const Index = () => {
         {/* Traffic & Confidence Charts */}
         <TrafficCharts entries={entries} />
 
-        {/* Live Traffic Feed */}
+        {/* Attack Log */}
         <TrafficFeed />
+
+        {/* Mitigation Panel */}
+        <MitigationPanel entries={entries} />
         <footer className="text-center py-8 border-t border-border/30">
           <p className="text-xs text-muted-foreground font-mono">
             CNN Model v1.0 &bull; TensorFlow Backend &bull; Real-Time Inference
