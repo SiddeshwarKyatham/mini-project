@@ -3,6 +3,7 @@ import { Shield, Activity, Brain, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import StatusCard from "@/components/StatusCard";
 import TrafficFeed from "@/components/TrafficFeed";
+import TrafficCharts from "@/components/TrafficCharts";
 import AttackBanner from "@/components/AttackBanner";
 import { useTrafficFeed } from "@/hooks/useTrafficFeed";
 import { useToast } from "@/hooks/use-toast";
@@ -86,6 +87,9 @@ const Index = () => {
             status="normal"
           />
         </section>
+
+        {/* Traffic & Confidence Charts */}
+        <TrafficCharts entries={entries} />
 
         {/* Live Traffic Feed */}
         <TrafficFeed />
