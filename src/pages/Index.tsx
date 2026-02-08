@@ -1,12 +1,30 @@
+import { useEffect, useRef } from "react";
 import { Shield, Activity, Brain, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import StatusCard from "@/components/StatusCard";
 import TrafficFeed from "@/components/TrafficFeed";
+import AttackBanner from "@/components/AttackBanner";
 import { useTrafficFeed } from "@/hooks/useTrafficFeed";
+import { useToast } from "@/hooks/use-toast";
+
 const Index = () => {
   const { entries, latest } = useTrafficFeed(3000, 30);
+  const { toast } = useToast();
+  const prevPrediction = useRef(latest?.prediction);
 
-  const networkStatus = latest?.prediction === "DDoS" ? "danger" : "normal";
+  const isUnderAttack = latest?.prediction === "DDoS";
+  const networkStatus = isUnderAttack ? "danger" : "normal";
+
+  useEffect(() => {
+    if (latest?.prediction === "DDoS" && prevPrediction.current !== "DDoS") {
+      toast({
+        title: "⚠️ DDoS Attack Detected",
+        description: `Confidence: ${latest.confidence}% — Volume: ${latest.volume.toLocaleString()} req/s`,
+        variant: "destructive",
+      });
+    }
+    prevPrediction.current = latest?.prediction;
+  }, [latest, toast]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -26,6 +44,8 @@ const Index = () => {
           </Badge>
         </div>
       </header>
+
+      <AttackBanner isUnderAttack={isUnderAttack} />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Title Section */}
