@@ -16,7 +16,7 @@ const steps = [
   },
   {
     icon: Monitor,
-    title: "React Dashboard (Lovable)",
+    title: "React Dashboard",
     description:
       "This frontend consumes inference results in real time, visualizing traffic volume, attack alerts, confidence trends, and mitigation status — all built with React, Recharts, and Tailwind CSS.",
   },
