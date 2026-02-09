@@ -1,73 +1,94 @@
-# Welcome to your Lovable project
+Traffic Tamer – DDoS Attack Detection System
 
-## Project info
+Traffic Tamer is an AI-driven DDoS attack detection system that analyzes network traffic using time-series analysis and deep learning (CNN) to identify malicious patterns in real time.
+The project is designed with a modern React-based frontend and an ML-powered Python backend, making it both technically strong and portfolio-worthy.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+🔍 Problem Statement
 
-## How can I edit this code?
+Distributed Denial of Service (DDoS) attacks overwhelm systems with malicious traffic, causing service downtime and financial loss. Traditional rule-based detection systems struggle to detect evolving attack patterns.
 
-There are several ways of editing your application.
+Traffic Tamer addresses this by leveraging deep learning on traffic time-series data to detect anomalies accurately and efficiently.
 
-**Use Lovable**
+✨ Key Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+📊 Time-Series Traffic Analysis
 
-Changes made via Lovable will be committed automatically to this repo.
+🧠 CNN-based Deep Learning Model for attack detection
 
-**Use your preferred IDE**
+⚡ Real-time Traffic Monitoring Dashboard
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+🚨 Automatic Detection of Malicious Traffic
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+🌐 Web-based UI for visualization and alerts
 
-Follow these steps:
+🔌 Modular Architecture (Frontend + ML Backend)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+🛠️ Tech Stack
+Frontend
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+React (Lovable-generated UI)
 
-# Step 3: Install the necessary dependencies.
-npm i
+TypeScript
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Tailwind CSS
 
-**Edit a file directly in GitHub**
+Vite
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Backend & ML
 
-**Use GitHub Codespaces**
+Python
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+TensorFlow / Keras
 
-## What technologies are used for this project?
+NumPy, Pandas
 
-This project is built with:
+Scikit-learn
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Deployment / Tools
 
-## How can I deploy this project?
+GitHub
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+REST API (for ML inference)
 
-## Can I connect a custom domain to my Lovable project?
+Browser-based visualization
 
-Yes, you can!
+🧠 How It Works
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Network traffic data is collected and converted into time-series format
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Data is preprocessed and fed into a CNN model
+
+The model classifies traffic as Normal or DDoS Attack
+
+Results are sent to the frontend for real-time visualization and alerts
+
+📁 Project Structure
+traffic-tamer/
+│
+├── frontend/          # React + UI components
+├── backend/           # Python ML logic
+├── models/            # Trained CNN models
+├── data/              # Traffic datasets
+├── public/            # Favicon & static assets
+└── README.md
+
+🚀 Future Enhancements
+
+Support for multiple DDoS attack types
+
+Live packet capture integration
+
+Cloud deployment (AWS/GCP)
+
+Alert notifications via email/SMS
+
+Advanced model optimization
+
+👩‍💻 Author
+
+Manogna
+B.Tech Student | Cyber Security & AI Enthusiast
+
+📌 Resume One-Liner
+
+Developed an AI-based DDoS attack detection system using time-series analysis and CNNs with a React-based real-time monitoring dashboard.
