@@ -38,7 +38,7 @@ const Index = () => {
             <Shield className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-lg font-bold tracking-tight font-mono">DDoS Detection</h1>
-              <p className="text-xs text-muted-foreground font-mono">AI-Powered Monitoring</p>
+              <p className="text-xs text-muted-foreground font-mono">Real-Time Monitoring</p>
             </div>
           </div>
           <Badge variant="outline" className="border-primary/30 text-primary font-mono text-xs animate-pulse-glow">
@@ -54,7 +54,7 @@ const Index = () => {
         {/* Title Section */}
         <section className="text-center space-y-4 py-8">
           <h1 className="text-3xl md:text-5xl font-bold font-mono tracking-tight">
-            <span className="text-primary">AI-Based</span>{" "}
+            <span className="text-primary">AI-Driven</span>{" "}
             <span className="text-foreground">DDoS Attack</span>
             <br />
             <span className="text-foreground">Detection System</span>
