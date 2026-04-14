@@ -9,106 +9,129 @@ export interface TrafficEntry {
   confidence: number;
 }
 
-const randomVolume = () => Math.floor(800 + Math.random() * 1200);
-const randomConfidence = () => Math.round((85 + Math.random() * 14.5) * 10) / 10;
+/**
+ * Generates 6 raw, independent network flow features.
+ * Ranges intentionally span both normal and attack-like territory
+ * so the CNN model (or heuristic) makes a genuine classification decision.
+ *
+ * Feature order matches CICDDoS2019 / preprocess.py FEATURES list:
+ *   [Flow Duration, Total Fwd Packets, Total Length of Fwd Packets,
+ *    Flow Bytes/s, Flow Packets/s, Avg Fwd Segment Size]
+ */
+function generateRawFeatures(): number[] {
+  // Generate DDoS traffic 25% of the time, Normal 75% of the time
+  const isDDoS = Math.random() < 0.25;
 
-function generateEntry(): TrafficEntry {
-  const isDDoS = Math.random() < 0.15;
-  return {
-    id: crypto.randomUUID(),
-    timestamp: new Date(),
-    volume: isDDoS ? Math.floor(3000 + Math.random() * 5000) : randomVolume(),
-    prediction: isDDoS ? "DDoS" : "Normal",
-    confidence: randomConfidence(),
-  };
+  if (isDDoS) {
+    const flowDuration   = Math.random() * 299 + 1;           // 1 - 300 ms
+    const fwdPackets     = Math.random() * 4800 + 200;      // 200 - 5_000 packets
+    const totalLength    = Math.random() * 1950000 + 50000;   // 50k - 2M bytes
+    const bytesPerSec    = Math.random() * 49500000 + 500000; // 500k - 50M bytes/s
+    const packetsPerSec  = Math.random() * 950000 + 50000;    // 50k - 1M pkts/s
+    const avgFwdSegSize  = Math.random() * 60 + 20;           // 20 - 80 bytes
+    return [flowDuration, fwdPackets, totalLength, bytesPerSec, packetsPerSec, avgFwdSegSize];
+  } else {
+    // Exact boundaries mirroring _normal_rows in preprocess.py
+    const flowDuration   = Math.random() * 195000 + 5000;     // 5_000 - 200_000 ms
+    const fwdPackets     = Math.random() * 49 + 1;            // 1 - 50 packets
+    const totalLength    = Math.random() * 2960 + 40;         // 40 - 3_000 bytes
+    const bytesPerSec    = Math.random() * 7990 + 10;         // 10 - 8_000 bytes/s
+    const packetsPerSec  = Math.random() * 199 + 1;           // 1 - 200 pkts/s
+    const avgFwdSegSize  = Math.random() * 1440 + 60;         // 60 - 1_500 bytes
+    return [flowDuration, fwdPackets, totalLength, bytesPerSec, packetsPerSec, avgFwdSegSize];
+  }
 }
 
-// Convert a TrafficEntry to the [flow_dur, fwd_packets, ...] format expected by model
-function entryToFeatures(e: TrafficEntry): number[] {
-  // We mock the other CICDDoS2019 features since the simulation only produced 'volume'
-  // When upgrading to full real data stream, you would feed REAL packet captures here.
-  const isSimulatedDDoS = e.prediction === "DDoS";
-  
-  const flowDuration = isSimulatedDDoS ? Math.random() * 100 : Math.random() * 10000 + 1000;
-  const fwdPackets = isSimulatedDDoS ? e.volume * 0.5 : e.volume * 0.1;
-  const totalLength = fwdPackets * (isSimulatedDDoS ? 50 : 200);
-  const bytesPerSec = isSimulatedDDoS ? e.volume * 1000 : e.volume * 200;
-  const packetsPerSec = e.volume;
-  const avgFwdSegSize = isSimulatedDDoS ? 50 : 200;
+export function useTrafficFeed(intervalMs = 6000, maxEntries = 30) {
+  const [mode, setMode] = useState<"live" | "backend_down">("live");
+  const forceDDoSRef = useRef(false);
 
-  return [flowDuration, fwdPackets, totalLength, bytesPerSec, packetsPerSec, avgFwdSegSize];
-}
+  const triggerDDoS = useCallback(() => {
+    forceDDoSRef.current = true;
+  }, []);
 
-export function useTrafficFeed(intervalMs = 3000, maxEntries = 30) {
-  const [mode, setMode] = useState<"live" | "simulated">("simulated");
-
+  // Initial 20 raw entries
   const [entries, setEntries] = useState<TrafficEntry[]>(() => {
-    const initial: TrafficEntry[] = [];
     const now = Date.now();
-    for (let i = 19; i >= 0; i--) {
-      const entry = generateEntry();
-      entry.timestamp = new Date(now - i * intervalMs);
-      initial.push(entry);
-    }
-    return initial;
+    return Array.from({ length: 20 }, (_, i) => {
+      const features = generateRawFeatures();
+      return {
+        id: crypto.randomUUID(),
+        timestamp: new Date(now - (19 - i) * intervalMs),
+        volume: Math.round(features[4]),   // packetsPerSec as a display proxy for "volume"
+        prediction: "Normal", // Temporary placeholder until first payload resolves
+        confidence: 0,
+      };
+    });
   });
 
   const [latest, setLatest] = useState<TrafficEntry | null>(null);
-  const entriesRef = useRef(entries); // Keep a ref to read current entries inside async
 
-  // Health check on mount
+  /**
+   * Rolling buffer of the last 20 raw feature vectors.
+   * This is what gets sent to /api/predict — completely independent of any label.
+   */
+  const featuresWindowRef = useRef<number[][]>(
+    Array.from({ length: 20 }, () => generateRawFeatures())
+  );
+
+  // Health check on mount — verify Flask backend is reachable
   useEffect(() => {
     let mounted = true;
     checkBackendHealth().then((isHealthy) => {
       if (mounted) {
-        setMode(isHealthy ? "live" : "simulated");
-        console.log(`Backend health check: ${isHealthy ? 'ALIVE (Live Mode)' : 'DOWN (Simulated Mode)'}`);
+        setMode(isHealthy ? "live" : "backend_down");
+        console.log(`Backend: ${isHealthy ? "ALIVE -> Live Mode (CNN)" : "DOWN -> Model Offline"}`);
       }
     });
     return () => { mounted = false; };
   }, []);
 
   const tick = useCallback(async () => {
-    let newEntry: TrafficEntry;
-
-    if (mode === "simulated") {
-      newEntry = generateEntry();
+    let newFeatures: number[];
+    if (forceDDoSRef.current) {
+      // Force an extreme UDP Amplification Attack
+      newFeatures = [1.5, 20000.0, 24000000.0, 95000000.0, 80000.0, 1200.0];
+      forceDDoSRef.current = false;
     } else {
-      // LIVE MODE: build a sequence of 20 and ask the Flask API
-      // First generate a raw entry to represent current "traffic" volume
-      const rawTraffic = generateEntry(); 
-      
-      const currentList = entriesRef.current;
-      // take last 19 + the current one
-      const recent = [...currentList.slice(-19), rawTraffic];
-      const sequence = recent.map(entryToFeatures);
-
-      // Pad sequence if we somehow don't have 20 (we should always have 20 because of init)
-      while (sequence.length < 20) {
-        sequence.unshift(sequence[0]);
-      }
-
-      try {
-        const mlResult = await fetchPrediction(sequence);
-        newEntry = {
-          id: crypto.randomUUID(),
-          timestamp: new Date(),
-          volume: mlResult.volume || rawTraffic.volume,
-          prediction: mlResult.prediction || "Normal",
-          confidence: mlResult.confidence || 85.0,
-        };
-      } catch (err) {
-        console.error("API failed. Falling back to simulated entry for this tick.");
-        newEntry = rawTraffic; // fallback
-      }
+      newFeatures = generateRawFeatures();
     }
 
+    // Step 2: Slide the features window forward
+    const updatedWindow = [...featuresWindowRef.current.slice(-19), newFeatures];
+    featuresWindowRef.current = updatedWindow;
+
+    let prediction: "Normal" | "DDoS" = "Normal";  // safe default; overwritten below
+    let confidence: number = 0;                  // safe default; overwritten below
+
+    if (mode === "live") {
+      // Step 3a — LIVE: send the 20-step window to Flask -> 1D-CNN decides
+      try {
+        const mlResult = await fetchPrediction(updatedWindow);
+        prediction = mlResult.prediction ?? "Normal";
+        confidence = mlResult.confidence ?? 0;
+      } catch {
+        // API hiccup this tick
+        console.warn("API call failed this tick. Backend offline.");
+        setMode("backend_down");
+      }
+    } else {
+       // Step 3b -- Backend down / not reachable. We shouldn't evaluate via heuristic.
+       console.warn("Backend is down. Traffic is not being evaluated by the model.");
+       // Re-check backend health for recovery
+       checkBackendHealth().then(isH => isH && setMode("live"));
+    }
+
+    const newEntry: TrafficEntry = {
+      id: crypto.randomUUID(),
+      timestamp: new Date(),
+      volume: Math.round(newFeatures[4]),  // packetsPerSec → display volume
+      prediction,
+      confidence,
+    };
+
     setLatest(newEntry);
-    setEntries((prev) => {
-      const updated = [...prev.slice(-(maxEntries - 1)), newEntry];
-      entriesRef.current = updated;
-      return updated;
-    });
+    setEntries((prev) => [...prev.slice(-(maxEntries - 1)), newEntry]);
   }, [mode, maxEntries]);
 
   useEffect(() => {
@@ -116,5 +139,5 @@ export function useTrafficFeed(intervalMs = 3000, maxEntries = 30) {
     return () => clearInterval(id);
   }, [tick, intervalMs]);
 
-  return { entries, latest: latest ?? entries[entries.length - 1], mode };
+  return { entries, latest: latest ?? entries[entries.length - 1], mode, triggerDDoS };
 }

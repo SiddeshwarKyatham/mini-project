@@ -27,6 +27,6 @@ dist-ssr
 __pycache__/
 *.pyc
 venv/
-backend/data/*.csv
+# backend/data/*.csv
 backend/model/*.joblib
 backend/model/*.keras

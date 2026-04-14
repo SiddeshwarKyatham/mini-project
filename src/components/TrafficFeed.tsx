@@ -66,7 +66,7 @@ export default function TrafficFeed({ entries }: TrafficFeedProps) {
             Attack Log &amp; History
           </CardTitle>
           <span className="text-xs text-muted-foreground font-mono">
-            {entries.length} entries &bull; 3s interval
+            {entries.length} entries &bull; 6s interval
           </span>
         </div>
         <div className="grid grid-cols-5 gap-4 text-xs text-muted-foreground font-mono uppercase tracking-wider pt-2 px-3 border-b border-border/50 pb-2">

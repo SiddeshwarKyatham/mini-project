@@ -131,7 +131,7 @@ export default function TrafficCharts({ entries }: TrafficChartsProps) {
                 />
               ))}
               <ReferenceLine
-                y={3000}
+                y={50000}
                 stroke="hsl(var(--cyber-warn))"
                 strokeDasharray="6 3"
                 strokeOpacity={0.5}
@@ -184,7 +184,7 @@ export default function TrafficCharts({ entries }: TrafficChartsProps) {
                 tickLine={false}
               />
               <YAxis
-                domain={[80, 100]}
+                domain={[0, 100]}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontFamily: "monospace" }}
                 axisLine={false}
                 tickLine={false}

@@ -2,10 +2,16 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sys
 import os
+import traceback
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "model"))
+
+# predict_sequence / load_assets are set to None if the model isn't available yet.
+# The endpoints below check for None and return a clear 503 rather than crashing.
+predict_sequence = None
+load_assets = None
 try:
-    from predict import predict_sequence, load_assets
+    from predict import predict_sequence, load_assets  # type: ignore[assignment]
 except Exception as e:
     print(f"Warning: could not load prediction module: {e}")
 
@@ -15,6 +21,8 @@ CORS(app)  # Allow frontend to access the API
 @app.route('/health', methods=['GET'])
 def health_check():
     """Endpoint for frontend to check if backend is alive."""
+    if load_assets is None:
+        return jsonify({"status": "error", "message": "Model module not loaded. Run model/train.py first."}), 503
     try:
         load_assets()
         return jsonify({"status": "ok", "model": "loaded"}), 200
@@ -37,19 +45,17 @@ def predict():
     if not isinstance(sequence, list) or len(sequence) != 20:
         return jsonify({"error": "Sequence must be a list of length 20"}), 400
         
+    if predict_sequence is None:
+        return jsonify({"error": "Model not loaded. Run model/train.py first."}), 503
+
     try:
         result = predict_sequence(sequence)
-        
-        # Calculate max volume to return to frontend for graphing
-        # Index 3 in features is Flow Bytes/s, but index 4 is Flow Packets/s
-        # Depending on how the frontend uses volume, we can return the average of the window or the latest.
-        # Let's say volume is roughly derived from the most recent packet rate
-        recent_volume = sequence[-1][4] 
-        result['volume'] = recent_volume
-        
+
+        # Return the most recent packets/s (index 4) as a volume proxy for the frontend chart
+        result['volume'] = round(sequence[-1][4], 2)
+
         return jsonify(result), 200
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 

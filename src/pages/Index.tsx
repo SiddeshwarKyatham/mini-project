@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
-import { Shield, Activity, Brain, Wifi } from "lucide-react";
+import { Shield, Activity, Brain, Wifi, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import StatusCard from "@/components/StatusCard";
 import TrafficFeed from "@/components/TrafficFeed";
 import TrafficCharts from "@/components/TrafficCharts";
@@ -11,7 +12,7 @@ import { useTrafficFeed } from "@/hooks/useTrafficFeed";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const { entries, latest, mode } = useTrafficFeed(3000, 30);
+  const { entries, latest, mode, triggerDDoS } = useTrafficFeed(6000, 30);
   const { toast } = useToast();
   const prevPrediction = useRef(latest?.prediction);
 
@@ -52,6 +53,15 @@ const Index = () => {
               SYSTEM ONLINE — SIMULATED
             </Badge>
           )}
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={triggerDDoS}
+            className="ml-4 font-mono shadow-md animate-pulse"
+          >
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            Launch DDoS Attack
+          </Button>
         </div>
       </header>
 
@@ -86,7 +96,7 @@ const Index = () => {
             value={latest?.volume.toLocaleString() ?? "—"}
             subtitle="requests / sec"
             icon={Activity}
-            status={latest && latest.volume > 3000 ? "warning" : "normal"}
+            status={latest && latest.volume > 50000 ? "warning" : "normal"}
           />
           <StatusCard
             title="Model Confidence"

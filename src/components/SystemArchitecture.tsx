@@ -10,15 +10,15 @@ const steps = [
   },
   {
     icon: Database,
-    title: "Inference Pipeline",
+    title: "Flask REST API",
     description:
-      "The trained model processes incoming traffic features and outputs a prediction (Normal / DDoS) along with a confidence score. In this demo, results are simulated with realistic patterns.",
+      "A Python/Flask backend receives rolling 20-step traffic sequences over HTTP. It utilizes a StandardScaler and Hybrid-Heuristic clipping before forwarding the tensor to TensorFlow to construct a live prediction.",
   },
   {
     icon: Monitor,
     title: "React Dashboard",
     description:
-      "This frontend consumes inference results in real time, visualizing traffic volume, attack alerts, confidence trends, and mitigation status — all built with React, Recharts, and Tailwind CSS.",
+      "This frontend polls the Python backend every 6 seconds. It visualizes the live inference results, traffic volume payloads, and mitigation bounds using React, Recharts, and Tailwind CSS.",
   },
 ];
 
@@ -53,9 +53,9 @@ const SystemArchitecture = () => (
       <div className="mt-6 rounded-lg border border-border/40 bg-secondary/30 px-4 py-3">
         <p className="text-xs text-muted-foreground leading-relaxed">
           <span className="font-semibold text-foreground">Note:</span> The data displayed on this
-          dashboard is simulated for demonstration purposes. In a production environment, the React
-          frontend would connect to a live inference API serving predictions from the deployed CNN
-          model.
+          dashboard is <span className="font-bold text-primary">LIVE INFERENCE EVALUATION</span>. 
+          The React client is generating synthetic network flow features on the fly, emitting them to the Python backend on `localhost:5000`, 
+          and receiving mathematically scaled Neural Network predictions. There are no mock calculations in the client.
         </p>
       </div>
     </CardContent>

@@ -38,11 +38,28 @@ def predict_sequence(sequence: list[list[float]]) -> dict:
     """
     load_assets()
     
-    # sequence should be a list of 20 time steps, each with 6 features
     df = pd.DataFrame(sequence, columns=FEATURES)
+
+    # 1. HYBRID HEURISTIC: "Circuit breaker" for extreme volumetric attacks
+    # Only evaluate the CURRENT (last) frame, not the entire 20-frame history, 
+    # to naturally prevent 20-tick trailing alerts.
+    current_packets_s = df['Flow Packets/s'].iloc[-1]
+    current_bytes_s = df['Flow Bytes/s'].iloc[-1]
     
-    # Scale features
+    if current_packets_s > 250_000 or current_bytes_s > 50_000_000:
+        return {
+            "prediction": "DDoS",
+            "confidence": 100.0,
+            "prob": 1.0
+        }
+
+    # 2. Scale features
     scaled_data = scaler.transform(df)
+
+    # 3. Z-SCORE CLAMPING
+    # Prevent extreme outliers from saturating the CNN activations.
+    # Keep normalized values within a sensible standard-deviation range.
+    scaled_data = np.clip(scaled_data, a_min=-5.0, a_max=10.0)
     
     # Reshape for CNN input: (batch_size, time_steps, features) -> (1, 20, 6)
     input_data = np.expand_dims(scaled_data, axis=0)
@@ -52,6 +69,14 @@ def predict_sequence(sequence: list[list[float]]) -> dict:
     
     # Formulate response
     is_ddos = prob > 0.5
+    
+    # POST-PROCESS SUPPRESSION:
+    # If the CNN flags a lingering attack because of GlobalAveragePooling over past frames,
+    # but the CURRENT frame is undeniably normal, suppress the alert.
+    if is_ddos and current_packets_s < 1000 and current_bytes_s < 100_000:
+        is_ddos = False
+        prob = 0.01
+
     confidence = (prob if is_ddos else 1 - prob) * 100
     
     return {
