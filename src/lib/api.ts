@@ -1,10 +1,10 @@
 import type { TrafficEntry } from "../hooks/useTrafficFeed";
 
-const FLASK_URL = "http://127.0.0.1:5000"; // fallback
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`/health`);
+    const res = await fetch(`${API_BASE_URL}/health`);
     if (res.ok) {
       const data = await res.json();
       return data.status === "ok";
@@ -17,7 +17,7 @@ export async function checkBackendHealth(): Promise<boolean> {
 
 export async function fetchPrediction(sequence: number[][]): Promise<Partial<TrafficEntry>> {
   try {
-    const res = await fetch(`/api/predict`, {
+    const res = await fetch(`${API_BASE_URL}/api/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sequence }),
