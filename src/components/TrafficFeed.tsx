@@ -1,4 +1,4 @@
-import { useTrafficFeed, type TrafficEntry } from "@/hooks/useTrafficFeed";
+import type { TrafficEntry } from "@/hooks/useTrafficFeed";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,8 +51,11 @@ function EntryRow({ entry }: { entry: TrafficEntry }) {
   );
 }
 
-export default function TrafficFeed() {
-  const { entries } = useTrafficFeed(3000, 30);
+interface TrafficFeedProps {
+  entries: TrafficEntry[];
+}
+
+export default function TrafficFeed({ entries }: TrafficFeedProps) {
 
   return (
     <Card className="cyber-border bg-card/80 backdrop-blur-sm overflow-hidden">

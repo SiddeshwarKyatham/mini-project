@@ -56,13 +56,25 @@ export default function TrafficCharts({ entries }: TrafficChartsProps) {
     return intervals;
   }, [chartData]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipPayloadItem {
+    color: string;
+    name: string;
+    value: number;
+    payload: { time: string; volume: number; confidence: number; isDDoS: boolean };
+  }
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipPayloadItem[];
+    label?: string;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (!active || !payload?.length) return null;
     const data = payload[0]?.payload;
     return (
       <div className="rounded-lg border border-border/50 bg-card/95 backdrop-blur-sm p-3 shadow-lg font-mono text-xs space-y-1">
         <p className="text-muted-foreground">{label}</p>
-        {payload.map((p: any, i: number) => (
+        {payload.map((p, i) => (
           <p key={i} style={{ color: p.color }} className="font-semibold">
             {p.name}: {p.value.toLocaleString()}
             {p.name === "Confidence" ? "%" : " req/s"}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -47,7 +47,14 @@ interface MitigationPanelProps {
 
 export default function MitigationPanel({ entries }: MitigationPanelProps) {
   const [events, setEvents] = useState<MitigationEvent[]>([]);
-  const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
+  // useRef (not useState) so mutations don't trigger re-renders or dep-array churn
+  const processedIds = useRef<Set<string>>(new Set());
+  // Track all pending timeouts so we can clear them on unmount (memory-leak fix)
+  const timerIds = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => { timerIds.current.forEach(clearTimeout); };
+  }, []);
 
   const advanceStatus = useCallback((id: string, to: MitigationEvent["status"]) => {
     setEvents((prev) =>
@@ -58,7 +65,7 @@ export default function MitigationPanel({ entries }: MitigationPanelProps) {
   // Watch for new DDoS entries
   useEffect(() => {
     const ddosEntries = entries.filter(
-      (e) => e.prediction === "DDoS" && !processedIds.has(e.id)
+      (e) => e.prediction === "DDoS" && !processedIds.current.has(e.id)
     );
 
     if (ddosEntries.length === 0) return;
@@ -72,20 +79,17 @@ export default function MitigationPanel({ entries }: MitigationPanelProps) {
       status: "flagged" as const,
     }));
 
-    setProcessedIds((prev) => {
-      const next = new Set(prev);
-      ddosEntries.forEach((e) => next.add(e.id));
-      return next;
-    });
+    // Mutate the ref directly — no re-render triggered, no dep-array churn
+    ddosEntries.forEach((e) => processedIds.current.add(e.id));
 
     setEvents((prev) => [...prev, ...newEvents].slice(-50));
 
     // Transition: flagged → mitigating after 2s, mitigated after 5s
     ddosEntries.forEach((e) => {
-      setTimeout(() => advanceStatus(e.id, "mitigating"), 2000);
-      setTimeout(() => advanceStatus(e.id, "mitigated"), 5000);
+      timerIds.current.push(setTimeout(() => advanceStatus(e.id, "mitigating"), 2000));
+      timerIds.current.push(setTimeout(() => advanceStatus(e.id, "mitigated"), 5000));
     });
-  }, [entries, processedIds, advanceStatus]);
+  }, [entries, advanceStatus]);
 
   const activeCount = events.filter((e) => e.status !== "mitigated").length;
 

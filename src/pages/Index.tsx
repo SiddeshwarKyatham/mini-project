@@ -11,7 +11,7 @@ import { useTrafficFeed } from "@/hooks/useTrafficFeed";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const { entries, latest } = useTrafficFeed(3000, 30);
+  const { entries, latest, mode } = useTrafficFeed(3000, 30);
   const { toast } = useToast();
   const prevPrediction = useRef(latest?.prediction);
 
@@ -41,10 +41,17 @@ const Index = () => {
               <p className="text-xs text-muted-foreground font-mono">Real-Time Monitoring</p>
             </div>
           </div>
-          <Badge variant="outline" className="border-primary/30 text-primary font-mono text-xs animate-pulse-glow">
-            <span className="mr-1.5 h-2 w-2 rounded-full bg-primary inline-block" />
-            SYSTEM ONLINE
-          </Badge>
+          {mode === "live" ? (
+            <Badge variant="outline" className="border-primary/30 text-primary font-mono text-xs animate-pulse-glow">
+              <span className="mr-1.5 h-2 w-2 rounded-full bg-primary inline-block" />
+              SYSTEM ONLINE — LIVE
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="border-cyber-warn/30 text-cyber-warn font-mono text-xs">
+              <span className="mr-1.5 h-2 w-2 rounded-full bg-cyber-warn inline-block animate-pulse" />
+              SYSTEM ONLINE — SIMULATED
+            </Badge>
+          )}
         </div>
       </header>
 
@@ -94,7 +101,7 @@ const Index = () => {
         <TrafficCharts entries={entries} />
 
         {/* Attack Log */}
-        <TrafficFeed />
+        <TrafficFeed entries={entries} />
 
         {/* Mitigation Panel */}
         <MitigationPanel entries={entries} />
